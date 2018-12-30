@@ -9,6 +9,14 @@ var _react = require("react");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -94,6 +102,22 @@ function stateful(_render) {
       _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "hookContext", {
         hooks: [],
         index: 0,
+        reducer: function reducer(_reducer, initialState) {
+          var _this$hookContext$sta = _this.hookContext.state(initialState),
+              _this$hookContext$sta2 = _slicedToArray(_this$hookContext$sta, 2),
+              state = _this$hookContext$sta2[0],
+              setState = _this$hookContext$sta2[1];
+
+          function dispatch() {
+            for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+              args[_key2] = arguments[_key2];
+            }
+
+            setState(_reducer.apply(void 0, [state].concat(args)));
+          }
+
+          return [state, dispatch];
+        },
         ref: function ref() {
           var hook = _this.useHook("ref");
 
@@ -122,8 +146,8 @@ function stateful(_render) {
           return [hook.value, hook.setter];
         },
         use: function use(hook) {
-          for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-            args[_key2 - 1] = arguments[_key2];
+          for (var _len3 = arguments.length, args = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+            args[_key3 - 1] = arguments[_key3];
           }
 
           return hook.apply(void 0, [_this.hookContext].concat(args));
@@ -132,8 +156,8 @@ function stateful(_render) {
           var hook = _this.useHook("effect");
 
           return _this.memoize(hook, function () {
-            for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-              args[_key3] = arguments[_key3];
+            for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+              args[_key4] = arguments[_key4];
             }
 
             return _this.onMount(function () {
@@ -150,8 +174,8 @@ function stateful(_render) {
         context: function context() {
           var contextName = "default";
 
-          for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-            args[_key4] = arguments[_key4];
+          for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+            args[_key5] = arguments[_key5];
           }
 
           if (typeof args[0] === "string") {

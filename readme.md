@@ -180,11 +180,10 @@ const reducer = (state, action) => {
 const TodoForm = stateful((props, { ref, context }) => {
   const inputRef = ref();
 
-  // access context value
   return context(({ dispatch }) => {
     function handleSubmit(e) {
       e.preventDefault();
-      dispatch({ type: "add", payload: inputRef.current.value });
+      dispatch("add", inputRef.current.value);
       inputRef.current.value = "";
     }
 
@@ -197,22 +196,13 @@ const TodoForm = stateful((props, { ref, context }) => {
 });
 
 const TodoList = stateful((props, { context }) => {
-  // access context value
   return context(({ todos, dispatch }) => {
     return (
       <ul>
         {todos.map(todo => (
           <li key={todo.id} style={{ opacity: todo.done ? 0.5 : 1 }}>
-            <button
-              onClick={() => dispatch({ type: "toggle", payload: todo.id })}
-            >
-              toggle
-            </button>
-            <button
-              onClick={() => dispatch({ type: "remove", payload: todo.id })}
-            >
-              remove
-            </button>
+            <button onClick={() => dispatch("toggle", todo.id)}>toggle</button>
+            <button onClick={() => dispatch("remove", todo.id)}>remove</button>
             {todo.text}
           </li>
         ))}
@@ -223,9 +213,9 @@ const TodoList = stateful((props, { context }) => {
 
 const App = stateful((props, { context, state }) => {
   const [todos, setTodos] = state(initialState);
-  const dispatch = action => setTodos(reducer(todos, action));
+  const dispatch = (type, payload) =>
+    setTodos(reducer(todos, { type, payload }));
   return context(
-    // pass down context to descendant components
     { todos, dispatch },
     <>
       <TodoForm />

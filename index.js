@@ -37,6 +37,17 @@ export function stateful(render) {
     hookContext = {
       hooks: [],
       index: 0,
+
+      reducer: (reducer, initialState) => {
+        const [state, setState] = this.hookContext.state(initialState);
+
+        function dispatch(...args) {
+          setState(reducer(state, ...args));
+        }
+
+        return [state, dispatch];
+      },
+
       ref: () => {
         const hook = this.useHook("ref");
         if (!hook.setter) {
@@ -44,6 +55,7 @@ export function stateful(render) {
         }
         return hook.setter;
       },
+
       state: defaultValue => {
         const hook = this.useHook("state");
         if (!hook.setter) {
@@ -57,7 +69,9 @@ export function stateful(render) {
 
         return [hook.value, hook.setter];
       },
+
       use: (hook, ...args) => hook(this.hookContext, ...args),
+
       effect: (factory, inputs) => {
         const hook = this.useHook("effect");
         return this.memoize(
@@ -70,10 +84,12 @@ export function stateful(render) {
           inputs
         );
       },
+
       memo: (factory, inputs) => {
         const hook = this.useHook("memo");
         return this.memoize(hook, factory, inputs);
       },
+
       context: (...args) => {
         let contextName = "default";
         if (typeof args[0] === "string") {
