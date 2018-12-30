@@ -226,3 +226,82 @@ const App = stateful((props, { context, state }) => {
 
 render(<App />, document.getElementById("root"));
 ```
+
+## Using reducer(reducer, initialState) to create todo app
+
+```jsx harmony
+import React from "react";
+import { render } from "react-dom";
+import { stateful } from "react-enhancer";
+
+const initialState = [{ id: 1, text: "item 1" }, { id: 2, text: "item 2" }];
+
+const appReducer = (state, type, payload) => {
+  if (type === "add") {
+    return [...state, { id: new Date().getTime(), text: payload }];
+  }
+  if (type === "remove") {
+    return state.filter(todo => todo.id !== payload);
+  }
+  if (type === "toggle") {
+    return state.map(todo =>
+      todo.id === payload ? { ...todo, done: !todo.done } : todo
+    );
+  }
+  return state;
+};
+
+const TodoForm = stateful((props, { ref, context }) => {
+  const inputRef = ref();
+
+  return context(({ dispatch }) => {
+    function handleSubmit(e) {
+      e.preventDefault();
+      dispatch("add", inputRef.current.value);
+      inputRef.current.value = "";
+    }
+
+    return (
+      <form onSubmit={handleSubmit}>
+        <input ref={inputRef} />
+      </form>
+    );
+  });
+});
+
+const TodoList = stateful((props, { context }) => {
+  return context(({ todos, dispatch }) => {
+    return (
+      <ul>
+        {todos.map(todo => (
+          <li key={todo.id} style={{ opacity: todo.done ? 0.5 : 1 }}>
+            <button onClick={() => dispatch("toggle", todo.id)}>toggle</button>
+            <button onClick={() => dispatch("remove", todo.id)}>remove</button>
+            {todo.text}
+          </li>
+        ))}
+      </ul>
+    );
+  });
+});
+
+const handleTodosChange = console.log;
+
+const App = stateful((props, { context, state, reducer }) => {
+  const [todos, dispatch] = reducer(
+    appReducer,
+    initialState,
+    handleTodosChange
+  );
+
+  return context(
+    { todos, dispatch },
+    <>
+      <TodoForm />
+      <TodoList />
+    </>
+  );
+});
+
+render(<App />, document.getElementById("root"));
+```

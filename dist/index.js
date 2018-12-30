@@ -102,8 +102,8 @@ function stateful(_render) {
       _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "hookContext", {
         hooks: [],
         index: 0,
-        reducer: function reducer(_reducer, initialState) {
-          var _this$hookContext$sta = _this.hookContext.state(initialState),
+        reducer: function reducer(_reducer, initialState, onChange) {
+          var _this$hookContext$sta = _this.hookContext.state(initialState, onChange),
               _this$hookContext$sta2 = _slicedToArray(_this$hookContext$sta, 2),
               state = _this$hookContext$sta2[0],
               setState = _this$hookContext$sta2[1];
@@ -129,7 +129,7 @@ function stateful(_render) {
 
           return hook.setter;
         },
-        state: function state(defaultValue) {
+        state: function state(defaultValue, onChange) {
           var hook = _this.useHook("state");
 
           if (!hook.setter) {
@@ -138,6 +138,7 @@ function stateful(_render) {
             hook.setter = function (nextValue) {
               if (nextValue === hook.value) return;
               hook.value = nextValue;
+              onChange && onChange(hook.value); // perform forceUpdate instead of setState({}) because it works faster
 
               _this.forceUpdate();
             };

@@ -38,8 +38,11 @@ export function stateful(render) {
       hooks: [],
       index: 0,
 
-      reducer: (reducer, initialState) => {
-        const [state, setState] = this.hookContext.state(initialState);
+      reducer: (reducer, initialState, onChange) => {
+        const [state, setState] = this.hookContext.state(
+          initialState,
+          onChange
+        );
 
         function dispatch(...args) {
           setState(reducer(state, ...args));
@@ -56,13 +59,15 @@ export function stateful(render) {
         return hook.setter;
       },
 
-      state: defaultValue => {
+      state: (defaultValue, onChange) => {
         const hook = this.useHook("state");
         if (!hook.setter) {
           hook.value = defaultValue;
           hook.setter = nextValue => {
             if (nextValue === hook.value) return;
             hook.value = nextValue;
+            onChange && onChange(hook.value);
+            // perform forceUpdate instead of setState({}) because it works faster
             this.forceUpdate();
           };
         }
