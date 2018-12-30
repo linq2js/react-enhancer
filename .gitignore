@@ -1,0 +1,14 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+.DS_Store
+.env
+.idea
+/build
+/coverage
+/node_modules
+npm-debug.log*
+stats.json
+yarn-debug.log*
+yarn-error.log*
+yarn-lock.json
+package-lock.json
