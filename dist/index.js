@@ -9,14 +9,6 @@ var _react = require("react");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -24,6 +16,16 @@ function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread n
 function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
 
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -67,16 +69,23 @@ function stateful(_render) {
       _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "didMountHandlers", []);
 
       _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "useHook", function (type) {
+        var inputs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+
         var _assertThisInitialize = _assertThisInitialized(_assertThisInitialized(_this)),
             hookContext = _assertThisInitialize.hookContext;
 
         var index = hookContext.index,
             hooks = hookContext.hooks; // create new hook if not any
 
-        var hook = hooks[index] || (hooks[index] = {
-          type: type,
-          index: hooks.length
-        });
+        var hook = hooks[index]; // reset hook if inputs changed
+
+        if (!hook || !arrayEqual(hook.inputs, inputs)) {
+          hooks[index] = hook = {
+            type: type,
+            inputs: inputs,
+            index: hooks.length
+          };
+        }
 
         if (type !== hook.type) {
           throw new Error("Invalid hook usage");
@@ -84,19 +93,6 @@ function stateful(_render) {
 
         hookContext.index++;
         return hook;
-      });
-
-      _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "memoize", function (hook, factory) {
-        var inputs = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
-        if (!hook.inputs || hook.inputs.some(function (input, index) {
-          return input !== inputs[index];
-        })) {
-          hook.value = factory.apply(void 0, _toConsumableArray(inputs));
-          hook.inputs = inputs;
-        }
-
-        return hook.value;
       });
 
       _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "hookContext", {
@@ -113,10 +109,145 @@ function stateful(_render) {
               args[_key2] = arguments[_key2];
             }
 
-            setState(_reducer.apply(void 0, [state].concat(args)));
+            var nextState = _reducer.apply(void 0, [state].concat(args));
+
+            if (nextState !== state) {
+              setState(state = nextState);
+            }
           }
 
           return [state, dispatch];
+        },
+        store: function store(options) {
+          var inputs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+          var _options = options,
+              initialState = _options.initialState,
+              onChange = _options.onChange;
+
+          var hook = _this.useHook("store", inputs);
+
+          if (!hook.value) {
+            if (typeof options === "function") {
+              options = {
+                reducer: options
+              };
+            }
+
+            var set = new WeakSet();
+            var _reducer2 = [];
+            var _middleware = [];
+            var initialized = false;
+            var state = initialState;
+
+            var store = _objectSpread({}, state, {
+              getState: function getState() {
+                return state;
+              },
+              reducer: function reducer() {
+                var added = false;
+
+                for (var _len3 = arguments.length, values = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+                  values[_key3] = arguments[_key3];
+                }
+
+                values.forEach(function (r) {
+                  if (set.has(r)) {
+                    return;
+                  }
+
+                  set.add(r);
+
+                  _reducer2.push(r);
+
+                  added = true;
+                });
+                added && store.dispatch({
+                  type: "@@init"
+                });
+              },
+              middleware: function middleware() {
+                for (var _len4 = arguments.length, values = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+                  values[_key4] = arguments[_key4];
+                }
+
+                values.forEach(function (r) {
+                  if (set.has(r)) {
+                    return;
+                  }
+
+                  set.add(r);
+
+                  _middleware.push(r(store));
+                });
+              },
+              dispatch: function dispatch(action) {
+                if (typeof action === "function") {
+                  return action(store.dispatch, store.getState);
+                }
+
+                _middleware.reduce(function (next, mw) {
+                  return function (action) {
+                    return mw(next)(action);
+                  };
+                }, function (action) {
+                  var nextState = _reducer2.reduce(function (state, reducer) {
+                    if (typeof reducer === "function") {
+                      return reducer(state, action);
+                    }
+
+                    var keys = Object.keys(reducer);
+                    var prevState = state;
+
+                    for (var _i2 = 0; _i2 < keys.length; _i2++) {
+                      var key = keys[_i2];
+                      var prevValue = state[key];
+                      var nextValue = reducer[key](prevValue, action);
+
+                      if (prevValue !== nextValue) {
+                        if (prevState === state) {
+                          state = _objectSpread({}, prevState);
+                        }
+
+                        state[key] = nextValue;
+                      }
+                    }
+
+                    return state;
+                  }, state);
+
+                  if (nextState !== state) {
+                    state = nextState; // should renew hook value to make sure context updated
+
+                    hook.value = Object.assign({}, store, state);
+                    onChange && onChange(state);
+
+                    if (initialized) {
+                      _this.forceUpdate();
+                    } else {
+                      _this.onMount(function () {
+                        return _this.forceUpdate();
+                      });
+                    }
+                  }
+                })(action);
+              }
+            }); // reducer if any
+
+
+            if (options.reducer) {
+              store.reducer.apply(store, _toConsumableArray(Array.isArray(options.reducer) ? options.reducer : [options.reducer]));
+            } // add middleware if any
+
+
+            if (options.middleware) {
+              store.middleware.apply(store, _toConsumableArray(Array.isArray(options.middleware) ? options.middleware : [options.middleware]));
+            }
+
+            hook.value = store;
+            initialized = true;
+          }
+
+          return hook.value;
         },
         ref: function ref() {
           var hook = _this.useHook("ref");
@@ -147,36 +278,39 @@ function stateful(_render) {
           return [hook.value, hook.setter];
         },
         use: function use(hook) {
-          for (var _len3 = arguments.length, args = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
-            args[_key3 - 1] = arguments[_key3];
+          for (var _len5 = arguments.length, args = new Array(_len5 > 1 ? _len5 - 1 : 0), _key5 = 1; _key5 < _len5; _key5++) {
+            args[_key5 - 1] = arguments[_key5];
           }
 
           return hook.apply(void 0, [_this.hookContext].concat(args));
         },
         effect: function effect(factory, inputs) {
-          var hook = _this.useHook("effect");
+          var hook = _this.useHook("effect", inputs);
 
-          return _this.memoize(hook, function () {
-            for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-              args[_key4] = arguments[_key4];
-            }
+          if (!hook.binded) {
+            hook.binded = true;
 
-            return _this.onMount(function () {
+            _this.onMount(function () {
               hook.dispose && hook.dispose();
-              hook.dispose = factory.apply(void 0, args);
+              hook.dispose = factory.apply(void 0, _toConsumableArray(inputs));
             });
-          }, inputs);
+          }
         },
         memo: function memo(factory, inputs) {
-          var hook = _this.useHook("memo");
+          var hook = _this.useHook("memo", inputs);
 
-          return _this.memoize(hook, factory, inputs);
+          if (!hook.binded) {
+            hook.binded = true;
+            hook.value = factory();
+          }
+
+          return hook.value;
         },
         context: function context() {
           var contextName = "default";
 
-          for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-            args[_key5] = arguments[_key5];
+          for (var _len6 = arguments.length, args = new Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
+            args[_key6] = arguments[_key6];
           }
 
           if (typeof args[0] === "string") {
@@ -240,5 +374,11 @@ function stateful(_render) {
 
   StatefulComponent.displayName = _render.displayName || _render.name;
   return StatefulComponent;
+}
+
+function arrayEqual(a, b) {
+  return a.every(function (value, index) {
+    return b[index] === value;
+  });
 }
 //# sourceMappingURL=index.js.map

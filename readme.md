@@ -305,3 +305,49 @@ const App = stateful((props, { context, state, reducer }) => {
 
 render(<App />, document.getElementById("root"));
 ```
+
+## Using store({ initialState, middleware, reducer, onChange }) to create redux like store
+
+```jsx harmony
+const TodoList = stateful((props, { context }) =>
+  // extract todos from store
+  context(({ todos, dispatch }) => (
+    <ul>
+      {todos.map(todo => (
+        <li key={todo.id} style={{ opacity: todo.done ? 0.5 : 1 }}>
+          <button
+            onClick={() => dispatch({ type: "toggle", payload: todo.id })}
+          >
+            toggle
+          </button>
+          <button
+            onClick={() => dispatch({ type: "remove", payload: todo.id })}
+          >
+            remove
+          </button>
+          {todo.text}
+        </li>
+      ))}
+    </ul>
+  ))
+);
+
+const handleStateChanged = state => console.log("state changed", state);
+const loggerMiddleware = createLogger();
+
+const App = stateful((props, { context, state, store }) => {
+  return context(
+    // create store and passing down to descendant components
+    store({
+      initialState,
+      reducer: appReducer,
+      middleware: loggerMiddleware,
+      onChange: handleStateChanged
+    }),
+    <>
+      <TodoForm />
+      <TodoList />
+    </>
+  );
+});
+```
